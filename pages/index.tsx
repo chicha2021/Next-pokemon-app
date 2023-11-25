@@ -19,15 +19,16 @@ const HomePage: NextPage<Props> = ({ pokemons }) => {
 
   const router = useRouter();
 
-  const onDetailPokemon = (id: string ) => {
-    router.push(`/pokemon/${id}`);
+  const onDetailPokemon = (name: string, id: string ) => {
+    // router.push(`/pokemon/${id}`);
+    router.push(`/name/${name}`);
   };
 
   return (
     <Layout title="Pokemons Page">
       <Grid container spacing={2}>
         {pokemons.map((e: any) => (
-          <Grid item xs={12} sm={6} md={4} lg={3} key={e.id} onClick={() => onDetailPokemon(e.id)} >
+          <Grid item xs={12} sm={6} md={4} lg={3} key={e.id} onClick={() => onDetailPokemon(e.name, e.id)} >
             <Card sx={{ maxWidth: 340 }}>
               <CardMedia
                 sx={{ height: 10, padding: 20 }}

@@ -1,6 +1,8 @@
+import React, { useState } from "react";
+import { Pokemon, PokemonListResponse } from "@/interfaces";
 import pokeApi from "@/api/pokeApi";
 import Layout from "@/components/layouts/Layout";
-import { Pokemon } from "@/interfaces";
+import { GetStaticPaths, GetStaticProps, NextPage } from "next";
 import {
   Button,
   Card,
@@ -10,24 +12,19 @@ import {
   Grid,
   Typography,
 } from "@mui/material";
-import { GetStaticPaths, GetStaticProps, NextPage } from "next";
-import { useRouter } from "next/router";
-import React, { useState } from "react";
-import { localFavorites } from "../../utils";
+import { localFavorites } from "@/utils";
 import { getPokemonInfo } from "@/utils/getPokemonInfo";
 
 interface Props {
   pokemon: Pokemon;
 }
 
-const PokemonPage: NextPage<Props> = ({ pokemon }) => {
-  const router = useRouter();
+const PokemonPageByName: NextPage<Props> = ({ pokemon }) => {
 
   const [isInFavorites, setIsInFavorites] = useState(
     localFavorites.existInFavorites(pokemon.id)
   );
 
-  console.log(pokemon);
   const onToggleFavorite = () => {
     localFavorites.toggleFavorite(pokemon.id);
     setIsInFavorites(!isInFavorites);
@@ -36,7 +33,11 @@ const PokemonPage: NextPage<Props> = ({ pokemon }) => {
   };
 
   return (
-    <Layout title="Detalle del pokemon">
+    <Layout
+      title={`Pokemon ${
+        pokemon.name[0].toUpperCase() + pokemon.name.substring(1)
+      }`}
+    >
       <Grid container spacing={2}>
         <Grid item xs={12} sm={6} md={4} lg={4}>
           <Card sx={{ maxWidth: 340 }}>
@@ -115,13 +116,16 @@ const PokemonPage: NextPage<Props> = ({ pokemon }) => {
 };
 
 export const getStaticPaths: GetStaticPaths = async (ctx) => {
-  const pokemons151 = [...Array(151)].map((e, index) => String(index + 1));
+  const { data } = await pokeApi.get<PokemonListResponse>(
+    `/pokemon?limit=600}`
+  );
+  const pokemonNames = data.results.map((e) => e.name);
 
   return {
-    paths: pokemons151.map((id) => ({
-      params: { id },
+    paths: pokemonNames.map((name) => ({
+      params: { name },
     })),
-    fallback: "blocking",
+    fallback: 'blocking',
     // fallback: false,
     // el fallback permite bloquear el ingreso a otros paths que no hayan sido creados por el getStaticPaths, hasta ahora
     // solo podemos ingresar a los primeros 3 pokemons, si entramos con el id 4 va a dar error porque esta en false
@@ -129,24 +133,23 @@ export const getStaticPaths: GetStaticPaths = async (ctx) => {
 };
 
 export const getStaticProps: GetStaticProps = async ({ params }) => {
-  const { id } = params as { id: string };
+  const { name } = params as { name: string };
 
-  const pokemon = await getPokemonInfo( id );
+  const pokemon = await getPokemonInfo( name.toLocaleLowerCase() );
   if (!pokemon) {
     return {
       redirect: {
         destination: '/',
-        permanent: false,
-      },
+        permanent: false
+      }
     };
-  }
+  };
 
   return {
     props: {
       pokemon,
     },
-    revalidate: 86400, //se revalidará la pagina al dia siguiente a las 24hs (86400seconds) para verificar si hay contenido nuevo y regenerarlo
   };
 };
 
-export default PokemonPage;
+export default PokemonPageByName;
